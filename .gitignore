@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+data/
+*.pt
+fid_real/
+fid_fake/
