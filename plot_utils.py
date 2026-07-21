@@ -48,7 +48,7 @@ def plot_fid_curve(out_name="fid_curve_polished.png"):
     ax.axvline(best_step, ls="--", color="#d62728", alpha=0.35, zorder=1)
     ax.annotate(f"best: {best_step} steps\nFID {main[best_step]:.1f}",
                 (best_step, main[best_step]),
-                textcoords="offset points", xytext=(9, 21),
+                textcoords="offset points", xytext=(9, 23),
                 fontsize=10, color="#d62728", fontweight="bold")
 
     for s, f in zip(steps, fids):
