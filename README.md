@@ -1,24 +1,31 @@
 # DDPM from Scratch + DDIM Sampling Study
 
 From-scratch PyTorch implementation of Denoising Diffusion Probabilistic Models
-(Ho et al. 2020), plus a systematic study of the quality-efficiency trade-off of
+(Ho et al. 2020), plus an exploratory study of the quality-efficiency trade-off of
 DDIM accelerated sampling (Song et al. 2021) on MNIST.
 
-<!-- TODO: 首圖兩張並排：assets/fid_curve_polished.png 和 assets/denoising_trajectory.png -->
+
 ![FID curve](assets/fid_curve_polished.png)
+
+**Figure caveat:** this is the existing figure, not a newly validated result.
+The main curve uses a single sampling seed; the plotting code places available
+multi-seed error bars at their means. Its blanket “3 random seeds” caption
+should not be read as three independent training runs or verification of every
+point. Regenerating a statistically consistent figure is future work.
 
 ## Highlights
 
 - **From-scratch DDPM**: U-Net (2.5M params, time embedding + attention),
   linear noise schedule, EMA, mixed-precision training, resume-safe
   checkpointing — trained on Colab.
-- **Finding — a U-shaped quality curve**: on MNIST, DDIM with **20 steps
-  achieves the best FID (6.19)**, outperforming 200 steps (17.36). More
-  sampling steps are not always better.
-- **Phase-transition-like collapse**: quality degrades gently down to 3 steps
-  (FID 129.5) then collapses catastrophically at 2 steps (FID 320.9).
-- **Robustness**: the 20-vs-200 ordering holds across 3 random seeds
-  (20 steps: 6.39 ± 0.19; 200 steps: 17.48 ± 0.12).
+- **Observed U-shaped curve**: for the evaluated checkpoint and tested settings,
+  20 DDIM steps yielded the lowest reported single-seed FID (6.19), compared
+  with 17.36 at 200 steps. The cause and generality remain unverified.
+- **Very low step counts**: reported FID rises to 129.5 at 3 steps and 320.9
+  at 2 steps; this alone does not establish a phase transition.
+- **Sampling-seed check**: the previously reported 20-vs-200 ordering holds
+  across 3 sampling seeds for the same checkpoint (20: 6.39 ± 0.19;
+  200: 17.48 ± 0.12). These are not independent training runs.
 
 ## Results
 
@@ -28,33 +35,50 @@ DDIM accelerated sampling (Song et al. 2021) on MNIST.
 
 <!-- TODO: 放步數對比圖 assets/ddim_steps_comparison.png 與低步數版 -->
 
-### How this finding emerged
-
-<!-- TODO: 寫成小故事（口試主敘事）：
-1. 去噪軌跡視覺化 → 注意到多數步數花在高噪聲區間、結構在最後才浮現
-2. 定性步數對比 → 意外發現 1000 步的背景反而有殘噪斑點
-3. 提出假設 → 低噪聲區間的模型誤差以高頻殘噪累積
-4. FID 量化 → 證實 U 型；3 seeds 確認穩健 -->
-
 ## Implementation notes
 
-<!-- TODO: 架構細節、訓練設定（30k steps, batch 128, AdamW 2e-4, fp16, EMA 0.999）、
-Colab 工作流（checkpoint 到 Drive、resume 機制、本機 SSD 存 FID 圖片）-->
+The current configuration specifies 30,000 training steps, batch size 128,
+AdamW with learning rate 2e-4, a linear noise schedule, and EMA decay 0.999.
+CUDA training uses mixed precision. Checkpoints restore model, EMA, optimizer,
+and step, but do not preserve all RNG or GradScaler state for exact continuation.
 
 ## Derivation notes
 
-See [notes/derivation.md](notes/derivation.md) — hand-worked derivations of:
+See [notes/derivation.md](notes/derivation.md) — derivations and implementation mappings for:
 forward-process closed form, ELBO decomposition, the simplified
 epsilon-prediction loss, and the DDIM non-Markovian formulation.
 
 ## Discussion & limitations
 
-<!-- TODO:
-- U 型右臂的假設性解釋（低噪聲 timestep 的密集查詢累積高頻誤差；
-  x0 clamp 在不同步數下的不對稱影響）— 標明為假設，附驗證構想
-- FID 侷限：Inception 為 ImageNet 彩圖訓練，MNIST 灰階小圖上絕對值意義有限，
-  相對比較仍可信
-- Future work: CIFAR-10 驗證 U 型是否重現、eta 掃描、1000 步補點 -->
+The results are limited to MNIST, one evaluated checkpoint, the current
+clipped DDIM implementation, a linear schedule, and eta=0. They do not establish
+that 20 steps is universally optimal. High-frequency error accumulation and
+step-dependent clipping effects are hypotheses, not demonstrated explanations.
+
+FID uses ImageNet-trained features, whose suitability for small grayscale
+digits needs cross-checking. Equal sample counts do not eliminate finite-sample
+FID bias. Sampling steps are a computation proxy, not measured wall-clock
+speedup. Existing numbers above are retained as previously reported; no
+training or FID evaluation was rerun for this documentation update.
+
+### Future validation (not yet completed)
+
+1. Compare no clipping, current clipping, and clipping with a recomputed
+   consistent noise estimate, using the same checkpoint and initial noise.
+2. Train independent seeds and distinguish training variability from sampling
+   variability. Archive checkpoint identifiers, configurations, and raw scores.
+3. Add nearby step counts (15, 25, 30) and full-step baselines; separate
+   validation-based selection from final test reporting.
+4. Add paired sample grids, domain-relevant quality/diversity checks, and
+   generation-time measurements on fixed hardware, excluding PNG saving and
+   FID computation. Replot means and error bars consistently with per-point n.
+5. Extend eta, noise schedules, and datasets to test generality.
+
+The mathematical notes explain existing methods; they do not replace these
+experiments. See [the detailed derivation and future-work notes](notes/derivation.md).
+
+For evaluation bias, see [Chong & Forsyth, Effectively Unbiased FID and
+Inception Score](https://arxiv.org/abs/1911.07023).
 
 ## Reproduce
 
