@@ -69,7 +69,7 @@ Timing covers synchronized sampler calls after warm-up; it excludes initial-nois
 creation, PNG saving, preview generation, and FID evaluation. These are observed
 times from the runs, not a separate randomized latency benchmark.
 
-The weights and preview PNGs are not included in this repository.
+The weights are not included in this repository. The supplied preview PNGs are archived in [assets/clipping_previews](assets/clipping_previews).
 The ablation was run using the Colab cell supplied for this study; the existing
 `ddim.py` still implements the original clipped mode. The legacy FID runner
 does **not** reproduce all three modes. The script below reproduces the
@@ -88,6 +88,40 @@ No GPU, model weights, or MNIST download is needed. The script validates seed
 identities, matching recorded configurations, and all 36 result entries before
 writing the summary CSV, Markdown table, and SVG/PNG figures. It uses Python's
 sample standard deviation and plots means with corresponding error bars.
+
+## Fixed-noise preview comparison
+
+![Matched preview comparison](assets/clipping_preview_comparison.png)
+
+Rows: no intermediate clipping, original clipping, and clipping with recomputed
+noise. Columns: 20, 50, and 200 steps. Each panel shows the same 16 initial
+latents (preview seed 2026 in the experiment cell). All modes receive the same
+final display clipping. The supplied archive's results.json exactly matches
+the archived sampling-seed-0 experiment; preview seed and evaluation seed are
+different.
+
+### Visual observations and limits
+
+- Corresponding positions largely preserve recognizable digit structures across
+  modes and step counts in these previews.
+- Original clipping at 200 steps shows visible isolated background marks,
+  including near the top-right sample and beside the second-row left sample.
+  Corresponding regions look cleaner in the two alternative 200-step panels.
+- This is consistent with an observable effect of clipping treatment, but does
+  not establish that these marks explain the full FID gap or prove a
+  high-frequency accumulation mechanism.
+- The alternative 50- and 200-step panels are visually similar at this scale.
+  These 16 examples do not reliably resolve their smaller FID differences.
+
+The previews are illustrative, not the 10,000-image FID sets. Their fixed
+seed is shared across runs, so repeated copies from different evaluation-seed
+folders are not independent visual evidence. No class labels or image-wide
+quality ratings are inferred from this small grid.
+
+Rebuild the comparison from the nine original PNGs with
+`python scripts/build_preview_figure.py` (requires matplotlib). The script only
+arranges existing images using nearest-neighbor display; it does not regenerate
+or retouch digits.
 
 ## Implementation and derivations
 
@@ -121,11 +155,9 @@ The old plot and plotting utility remain historical artifacts; use
 **Completed:** three clipping modes × four step counts × three sampling seeds,
 with raw scores, sampling-time measurements, and consistent mean/sample-SD plots.
 
-**Next, without more GPU generation:** collect the existing preview PNGs for
-20, 50, and 200 steps in all three modes from one matching experiment folder.
-The Colab cell uses a fixed preview seed of 2026 for all runs; these previews
-are illustrative and are distinct from the 10,000-image FID sample sets.
-See [the preview collection instructions](results/clipping_ablation/NEXT_STEPS.md).
+**Completed visual follow-up:** nine preview grids have been archived and combined
+above. The next research gate is independent training checkpoints, rather than
+additional copies of the same fixed-noise previews.
 
 **Further experiments:**
 
