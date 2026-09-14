@@ -4,9 +4,11 @@
 
 不需要重新執行已完成的取樣 seeds，也不需要再收集原模型預覽。
 
-## 近期應补的紀錄
+## 已補齊的紀錄
 
-訓練設定中的 total_steps=30000 是目標，不是 checkpoint 實際完成步數的紀錄。下一次開啟 Colab 時，可從新模型的 latest.pt 以 weights_only=True 讀取 step，連同權重 SHA-256 保存，補足結果與訓練完成狀態的關聯。不要修改結果 JSON 中的 FID。
+[checkpoint_metadata.json](train_seed_2026/checkpoint_metadata.json) 已記錄 completed_steps=30000、has_ema=true，且 SHA-256 與新模型評估結果一致。這項紀錄已完成，無需再匯出。
+
+目前可先整理報告或簡報：研究問題、三種更新方式、兩個模型分開的統計、圖片觀察與限制。下列擴充實驗依研究目標安排，無需為完成本次紀錄而追加計算。
 
 現有九張預覽屬於原模型。若要補充新增模型的視覺證據，應使用新增模型實驗資料夾內已保存的九張 PNG，並連同其 results.json 提供，無需再次生成。
 

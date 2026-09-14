@@ -49,8 +49,10 @@ the original nine 10-step measurements are retained but excluded from that figur
 - Training configuration records a 30,000-step target, batch 128, learning rate
   2e-4, EMA 0.999, and source commit
   `38666c71b849ba3a70a1311304e79bc69bc1480c`.
-  These JSON files do not include the checkpoint's actual completed-step field,
-  nor independently verify an uninterrupted training trajectory.
+  The supplied [checkpoint metadata](results/clipping_ablation/train_seed_2026/checkpoint_metadata.json)
+  records 30,000 completed steps and EMA availability, with the same SHA-256
+  as the evaluation results. This is a user-exported checkpoint inspection
+  record; it does not independently verify an uninterrupted training trajectory.
 - All recorded evaluation settings match the original runs except checkpoint
   hash and omission of the 10-step setting. Sampling seeds are matched.
 - [Raw seed 0](results/clipping_ablation/train_seed_2026/seed_0.json),
@@ -218,9 +220,9 @@ been evaluated; further training replication remains useful.
 
 **Further experiments:**
 
-1. Record the actual completed-step field and checkpoint-linked training metadata
-   for the new model. Add further independently seeded training runs in separate
-   directories before making broad claims about training variability.
+1. Checkpoint-linked completed-step metadata is now archived for the new model.
+   Add further independently seeded training runs in separate directories before
+   making broad claims about training variability.
 2. Add domain-relevant quality/diversity metrics and inspect final clipping
    magnitudes. Inception features and finite-sample FID have limitations.
 3. Densify step counts around the observed minimum using a validation split
