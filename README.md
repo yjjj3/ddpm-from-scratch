@@ -1,105 +1,149 @@
-# DDPM from Scratch + DDIM Sampling Study
+# DDPM from Scratch + DDIM Clipping Ablation
 
-From-scratch PyTorch implementation of Denoising Diffusion Probabilistic Models
-(Ho et al. 2020), plus an exploratory study of the quality-efficiency trade-off of
-DDIM accelerated sampling (Song et al. 2021) on MNIST.
+From-scratch PyTorch DDPM on MNIST, with an empirical study of how clipping
+and noise recomputation affect DDIM's sampling-step/quality relationship.
+
+![Clipping ablation: FID and sampling time](assets/clipping_ablation.svg)
+
+## Main findings
+
+Across three **sampling seeds (0, 42, 123) using one EMA checkpoint**:
+
+- Original clipping has its lowest measured FID at 20 steps.
+- No intermediate clipping and clipping with noise recomputation both have
+  their lowest measured FID at 50 steps.
+- At 200 steps, recomputing noise after clipping reduces mean FID from
+  **17.471 to 5.680**. Removing intermediate clipping gives **5.447**.
+- Both alternative modes retain a smaller FID increase from 50 to 200 steps
+  in every seed. Clipping treatment does not explain the entire non-monotonic curve.
+
+These controlled comparisons support sensitivity to clipping treatment for
+this checkpoint. They do not establish a universally optimal step count,
+a high-frequency error mechanism, or robustness across independently trained models.
+
+## Results: clipping ablation
+
+Mean ± **sample standard deviation (ddof=1)** over three sampling seeds.
+Every cell has n=3; each run generates 10,000 images. Lower FID is better.
+
+| Steps | No intermediate clipping | Original clipping | Clip + recompute noise |
+|---|---|---|---|
+| 10 | 10.486 ± 0.080 | 11.039 ± 0.070 | 10.832 ± 0.063 |
+| 20 | 5.405 ± 0.058 | 6.369 ± 0.047 | 5.639 ± 0.066 |
+| 50 | 4.878 ± 0.061 | 7.707 ± 0.073 | 5.121 ± 0.052 |
+| 200 | 5.447 ± 0.082 | 17.471 ± 0.099 | 5.680 ± 0.069 |
 
 
-![FID curve](assets/fid_curve_polished.png)
+The compared update rules are:
 
-**Figure caveat:** this is the existing figure, not a newly validated result.
-The main curve uses a single sampling seed; the plotting code places available
-multi-seed error bars at their means. Its blanket “3 random seeds” caption
-should not be read as three independent training runs or verification of every
-point. Regenerating a statistically consistent figure is future work.
+| Mode | Intermediate clean-image estimate | Direction noise |
+|---|---|---|
+| no_clip | Unclipped | Original predicted noise |
+| clip_original | Clipped to [-1, 1] | Original predicted noise |
+| clip_recompute | Clipped to [-1, 1] | Recomputed to agree with clipped estimate |
 
-## Highlights
+**All modes clip the final image to [-1, 1] before conversion to PNG and FID.**
+“No clipping” therefore refers only to intermediate sampling updates.
+The no_clip out-of-range fraction is recorded before final clipping; it does
+not measure clipping magnitude or independently establish image quality.
 
-- **From-scratch DDPM**: U-Net (2.5M params, time embedding + attention),
-  linear noise schedule, EMA, mixed-precision training, resume-safe
-  checkpointing — trained on Colab.
-- **Observed U-shaped curve**: for the evaluated checkpoint and tested settings,
-  20 DDIM steps yielded the lowest reported single-seed FID (6.19), compared
-  with 17.36 at 200 steps. The cause and generality remain unverified.
-- **Very low step counts**: reported FID rises to 129.5 at 3 steps and 320.9
-  at 2 steps; this alone does not establish a phase transition.
-- **Sampling-seed check**: the previously reported 20-vs-200 ordering holds
-  across 3 sampling seeds for the same checkpoint (20: 6.39 ± 0.19;
-  200: 17.48 ± 0.12). These are not independent training runs.
+### Protocol and provenance
 
-## Results
+- One 30,000-step EMA checkpoint, as reported by the Colab checkpoint inspection.
+- SHA-256: `c4145894a7dfd44a695396070fccd142c53fff3c06c46e4d04a66a4177b3adc6`.
+- MNIST, padded to 32×32; T=1000; linear beta from 0.0001 to 0.02; eta=0.
+- Batch size 100, NVIDIA A100-SXM4-40GB, recorded PyTorch 2.11.0+cu128.
+- Matched initial-noise sequences across modes and step counts within each seed.
+- Colab used clean-fid in clean mode against 10,000 padded MNIST test images.
+  The exact clean-fid version was not recorded.
+- These are user-executed Colab measurements archived without changing scores;
+  this update recomputes statistics and plots, not generation or FID.
+- Raw files: [seed 0](results/clipping_ablation/seed_0.json),
+  [seed 42](results/clipping_ablation/seed_42.json),
+  [seed 123](results/clipping_ablation/seed_123.json).
+- [Summary CSV](results/clipping_ablation/summary.csv) includes mean sampling times.
 
-| DDIM steps | 2 | 3 | 5 | 10 | **20** | 50 | 100 | 200 |
-|---|---|---|---|---|---|---|---|---|
-| FID ↓ | 320.9 | 129.5 | 41.7 | 10.6 | **6.2** | 7.6 | 9.9 | 17.4 |
+Mean sampling time for 10,000 images is approximately 10–11 seconds at 20 steps,
+25–26 seconds at 50 steps, and 101–103 seconds at 200 steps.
+Timing covers synchronized sampler calls after warm-up; it excludes initial-noise
+creation, PNG saving, preview generation, and FID evaluation. These are observed
+times from the runs, not a separate randomized latency benchmark.
 
-<!-- TODO: 放步數對比圖 assets/ddim_steps_comparison.png 與低步數版 -->
+The weights and preview PNGs are not included in this repository.
+The ablation was run using the Colab cell supplied for this study; the existing
+`ddim.py` still implements the original clipped mode. The legacy FID runner
+does **not** reproduce all three modes. The script below reproduces the
+summary and figure from the archived measurements only.
 
-## Implementation notes
+## Rebuild the published statistics and figure
 
-The current configuration specifies 30,000 training steps, batch size 128,
-AdamW with learning rate 2e-4, a linear noise schedule, and EMA decay 0.999.
-CUDA training uses mixed precision. Checkpoints restore model, EMA, optimizer,
-and step, but do not preserve all RNG or GradScaler state for exact continuation.
-
-## Derivation notes
-
-See [notes/derivation.md](notes/derivation.md) — derivations and implementation mappings for:
-forward-process closed form, ELBO decomposition, the simplified
-epsilon-prediction loss, and the DDIM non-Markovian formulation.
-
-## Discussion & limitations
-
-The results are limited to MNIST, one evaluated checkpoint, the current
-clipped DDIM implementation, a linear schedule, and eta=0. They do not establish
-that 20 steps is universally optimal. High-frequency error accumulation and
-step-dependent clipping effects are hypotheses, not demonstrated explanations.
-
-FID uses ImageNet-trained features, whose suitability for small grayscale
-digits needs cross-checking. Equal sample counts do not eliminate finite-sample
-FID bias. Sampling steps are a computation proxy, not measured wall-clock
-speedup. Existing numbers above are retained as previously reported; no
-training or FID evaluation was rerun for this documentation update.
-
-### Future validation (not yet completed)
-
-1. Compare no clipping, current clipping, and clipping with a recomputed
-   consistent noise estimate, using the same checkpoint and initial noise.
-2. Train independent seeds and distinguish training variability from sampling
-   variability. Archive checkpoint identifiers, configurations, and raw scores.
-3. Add nearby step counts (15, 25, 30) and full-step baselines; separate
-   validation-based selection from final test reporting.
-4. Add paired sample grids, domain-relevant quality/diversity checks, and
-   generation-time measurements on fixed hardware, excluding PNG saving and
-   FID computation. Replot means and error bars consistently with per-point n.
-5. Extend eta, noise schedules, and datasets to test generality.
-
-The mathematical notes explain existing methods; they do not replace these
-experiments. See [the detailed derivation and future-work notes](notes/derivation.md).
-
-For evaluation bias, see [Chong & Forsyth, Effectively Unbiased FID and
-Inception Score](https://arxiv.org/abs/1911.07023).
-
-## Reproduce
+From the repository root:
 
 ```bash
-pip install -r requirements.txt
+pip install matplotlib
+python scripts/summarize_ablation.py
 ```
 
-```python
-# 1. Train (Colab: mount Drive first; ~25 min on A100, ~1.5 hr on T4)
-from ddpm_mnist import train
-train()
+No GPU, model weights, or MNIST download is needed. The script validates seed
+identities, matching recorded configurations, and all 36 result entries before
+writing the summary CSV, Markdown table, and SVG/PNG figures. It uses Python's
+sample standard deviation and plots means with corresponding error bars.
 
-# 2. FID sweep (~50 min on A100)
-from fid_eval import prepare_real_images, run_fid_experiment, run_seed_check
-prepare_real_images()
-results = run_fid_experiment()
-run_seed_check(seed=42)
+## Implementation and derivations
 
-# 3. Plot
-from plot_utils import plot_fid_curve
-plot_fid_curve()
-```
+The existing training configuration uses 30,000 steps, batch size 128, AdamW
+at 2e-4, EMA decay 0.999, and CUDA mixed precision. Checkpoints restore model,
+EMA, optimizer, and step, but not all RNG or GradScaler state for exact continuation.
 
-<!-- TODO: 補實測的 Colab 運算單元消耗，給讀者參考 -->
+[Derivation notes](notes/derivation.md) cover forward marginals, ELBO telescoping,
+Gaussian KL, simplified noise MSE, DDIM's non-Markovian construction, and code
+mappings. In particular, eta=1 is not identical to this repository's DDPM
+sampler, which uses beta rather than posterior beta-tilde variance.
+
+## Historical exploration
+
+The earlier original-clipping sweep reported:
+
+| Steps | 2 | 3 | 5 | 10 | 20 | 50 | 100 | 200 |
+|---|---|---|---|---|---|---|---|---|
+| Single-seed FID | 320.9 | 129.5 | 41.7 | 10.6 | 6.2 | 7.6 | 9.9 | 17.4 |
+
+These historical values are **not pooled with the new ablation**. The old runner
+uses batch size 500 and a different RNG setup; an identical numeric seed need
+not give identical initial samples across the two implementations.
+The previous “20 steps best” claim is now scoped to original clipping and tested
+settings. Low-step degradation alone does not establish a phase transition.
+The old plot and plotting utility remain historical artifacts; use
+`scripts/summarize_ablation.py` for the current figure.
+
+## Limitations and next steps
+
+**Completed:** three clipping modes × four step counts × three sampling seeds,
+with raw scores, sampling-time measurements, and consistent mean/sample-SD plots.
+
+**Next, without more GPU generation:** collect the existing preview PNGs for
+20, 50, and 200 steps in all three modes from one matching experiment folder.
+The Colab cell uses a fixed preview seed of 2026 for all runs; these previews
+are illustrative and are distinct from the 10,000-image FID sample sets.
+See [the preview collection instructions](results/clipping_ablation/NEXT_STEPS.md).
+
+**Further experiments:**
+
+1. Train independently seeded checkpoints in separate directories and repeat
+   the key comparisons to assess training variability.
+2. Add domain-relevant quality/diversity metrics and inspect final clipping
+   magnitudes. Inception features and finite-sample FID have limitations.
+3. Densify step counts around the observed minimum using a validation split
+   for selection, then evaluate on held-out data. The current minima were
+   selected using test-set FID and are exploratory.
+4. Extend datasets, noise schedules, and eta; add mechanistic diagnostics before
+   attributing the remaining increase to accumulated high-frequency errors.
+
+The three sampling seeds do not quantify training variability, metric bias,
+or uncertainty from resampling the real-image reference set.
+
+## References
+
+- [Ho et al., DDPM](https://arxiv.org/abs/2006.11239)
+- [Song et al., DDIM](https://arxiv.org/abs/2010.02502)
+- [Chong & Forsyth, finite-sample FID bias](https://arxiv.org/abs/1911.07023)
