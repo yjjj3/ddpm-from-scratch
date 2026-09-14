@@ -5,6 +5,18 @@ and noise recomputation affect DDIM's sampling-step/quality relationship.
 
 ![Two-checkpoint comparison](assets/checkpoint_comparison.svg)
 
+## Notebook entry points
+
+- [Review notebook](ddpm_experiments_review.ipynb): organized sections; default
+  Run All rebuilds archived statistics only. Training and FID are opt-in.
+- [Original execution record](ddpm_experiments.ipynb): uploaded notebook and saved
+  outputs preserved unchanged.
+- [Notebook audit](notes/notebook_review.md): edits, observed issues, and validation limits.
+
+The review notebook has not been executed in Colab during this update.
+It includes the three-mode experiment code derived from the uploaded notebook;
+the archived JSON files remain the reference for published measurements.
+
 ## Main findings
 
 The clipping comparison has now been observed in **two checkpoints**, each
