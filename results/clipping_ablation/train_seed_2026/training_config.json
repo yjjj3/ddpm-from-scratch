@@ -1,0 +1,25 @@
+{
+  "image_size": 32,
+  "channels": 1,
+  "T": 1000,
+  "beta_start": 0.0001,
+  "beta_end": 0.02,
+  "base_ch": 64,
+  "ch_mults": [
+    1,
+    2,
+    2
+  ],
+  "batch_size": 128,
+  "lr": 0.0002,
+  "total_steps": 30000,
+  "ema_decay": 0.999,
+  "log_every": 200,
+  "ckpt_every": 2000,
+  "ckpt_dir": "/content/drive/MyDrive/ddpm_independent/train_seed_2026",
+  "device": "cuda",
+  "training_seed": 2026,
+  "torch_version": "2.11.0+cu128",
+  "gpu": "NVIDIA A100-SXM4-40GB",
+  "git_commit": "38666c71b849ba3a70a1311304e79bc69bc1480c"
+}

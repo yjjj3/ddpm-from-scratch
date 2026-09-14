@@ -1,0 +1,100 @@
+{
+  "config": {
+    "version": 1,
+    "checkpoint_sha256": "41399fca5807a9531e89102a15dcc45341d30dfb9684d0883eade53cb41cc16c",
+    "steps": [
+      20,
+      50,
+      200
+    ],
+    "modes": [
+      "no_clip",
+      "clip_original",
+      "clip_recompute"
+    ],
+    "num_images": 10000,
+    "batch_size": 100,
+    "seed": 0,
+    "T": 1000,
+    "beta_start": 0.0001,
+    "beta_end": 0.02,
+    "image_size": 32,
+    "channels": 1,
+    "torch": "2.11.0+cu128",
+    "gpu": "NVIDIA A100-SXM4-40GB"
+  },
+  "results": {
+    "no_clip_20": {
+      "mode": "no_clip",
+      "steps": 20,
+      "fid": 5.300839995864862,
+      "generation_seconds": 10.615230230000634,
+      "images_per_second": 942.0426861527809,
+      "final_out_of_range_fraction": 0.26225634765625
+    },
+    "no_clip_50": {
+      "mode": "no_clip",
+      "steps": 50,
+      "fid": 4.721707221486952,
+      "generation_seconds": 26.09406404800484,
+      "images_per_second": 383.22892063126534,
+      "final_out_of_range_fraction": 0.30357529296875
+    },
+    "no_clip_200": {
+      "mode": "no_clip",
+      "steps": 200,
+      "fid": 5.179065400477668,
+      "generation_seconds": 102.27275684499455,
+      "images_per_second": 97.77774950523808,
+      "final_out_of_range_fraction": 0.34112529296875
+    },
+    "clip_original_20": {
+      "mode": "clip_original",
+      "steps": 20,
+      "fid": 6.317881081320081,
+      "generation_seconds": 10.51454464600829,
+      "images_per_second": 951.0635350049487,
+      "final_out_of_range_fraction": 0.0
+    },
+    "clip_original_50": {
+      "mode": "clip_original",
+      "steps": 50,
+      "fid": 7.413128004704845,
+      "generation_seconds": 25.786326642003587,
+      "images_per_second": 387.80242485996075,
+      "final_out_of_range_fraction": 0.0
+    },
+    "clip_original_200": {
+      "mode": "clip_original",
+      "steps": 200,
+      "fid": 21.42283064975834,
+      "generation_seconds": 103.10953776700171,
+      "images_per_second": 96.98423847653319,
+      "final_out_of_range_fraction": 0.0
+    },
+    "clip_recompute_20": {
+      "mode": "clip_recompute",
+      "steps": 20,
+      "fid": 5.535545281764996,
+      "generation_seconds": 10.773108796000997,
+      "images_per_second": 928.2371680597919,
+      "final_out_of_range_fraction": 0.0
+    },
+    "clip_recompute_50": {
+      "mode": "clip_recompute",
+      "steps": 50,
+      "fid": 4.960436079071826,
+      "generation_seconds": 26.734064209999815,
+      "images_per_second": 374.0546114293959,
+      "final_out_of_range_fraction": 0.0
+    },
+    "clip_recompute_200": {
+      "mode": "clip_recompute",
+      "steps": 200,
+      "fid": 5.378290470857792,
+      "generation_seconds": 104.45343598199997,
+      "images_per_second": 95.73643897863981,
+      "final_out_of_range_fraction": 0.0
+    }
+  }
+}

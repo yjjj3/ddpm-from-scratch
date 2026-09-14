@@ -3,25 +3,83 @@
 From-scratch PyTorch DDPM on MNIST, with an empirical study of how clipping
 and noise recomputation affect DDIM's sampling-step/quality relationship.
 
-![Clipping ablation: FID and sampling time](assets/clipping_ablation.svg)
+![Two-checkpoint comparison](assets/checkpoint_comparison.svg)
 
 ## Main findings
 
-Across three **sampling seeds (0, 42, 123) using one EMA checkpoint**:
+The clipping comparison has now been observed in **two checkpoints**, each
+evaluated with sampling seeds **0, 42, 123** on their common 20/50/200-step grid.
 
-- Original clipping has its lowest measured FID at 20 steps.
-- No intermediate clipping and clipping with noise recomputation both have
-  their lowest measured FID at 50 steps.
-- At 200 steps, recomputing noise after clipping reduces mean FID from
-  **17.471 to 5.680**. Removing intermediate clipping gives **5.447**.
-- Both alternative modes retain a smaller FID increase from 50 to 200 steps
-  in every seed. Clipping treatment does not explain the entire non-monotonic curve.
+- Original clipping has its lowest measured FID at 20 steps in both models.
+- No intermediate clipping and clipping with noise recomputation have their
+  lowest measured FID at 50 steps in both models.
+- At 200 steps, original clipping versus recomputed noise gives mean FID
+  **17.471 vs 5.680** for the original model and **21.481 vs 5.419** for the
+  new training-seed-2026 model.
+- A smaller increase from 50 to 200 steps remains for both alternative modes
+  in every sampling seed of both models.
 
-These controlled comparisons support sensitivity to clipping treatment for
-this checkpoint. They do not establish a universally optimal step count,
-a high-frequency error mechanism, or robustness across independently trained models.
+This supports sensitivity to clipping treatment beyond the first checkpoint,
+but does not establish broad training robustness or a high-frequency error
+mechanism. All standard deviations below describe sampling variation within
+one model; six sampling runs are not six independent training runs.
 
-## Results: clipping ablation
+## New checkpoint: training seed 2026
+
+Mean ± sample SD (ddof=1), n=3 sampling seeds, 10,000 images per run.
+The original model is retained separately below; no scores are pooled.
+
+| Steps | No intermediate clipping | Original clipping | Clip + recompute |
+|---|---|---|---|
+| 20 | 5.350 ± 0.049 | 6.362 ± 0.051 | 5.600 ± 0.069 |
+| 50 | 4.764 ± 0.087 | 7.449 ± 0.099 | 5.003 ± 0.105 |
+| 200 | 5.208 ± 0.096 | 21.481 ± 0.088 | 5.419 ± 0.114 |
+
+
+The added batch contains 27 measurements (3 modes × 3 step counts × 3 seeds).
+Together with the original 36, the archive contains 63 measurements.
+The matched two-model comparison uses 54 measurements at common step counts;
+the original nine 10-step measurements are retained but excluded from that figure.
+
+### New-model provenance
+
+- Training seed: 2026; [training configuration](results/clipping_ablation/train_seed_2026/training_config.json).
+- Checkpoint SHA-256: `41399fca5807a9531e89102a15dcc45341d30dfb9684d0883eade53cb41cc16c`,
+  different from the original checkpoint.
+- Training configuration records a 30,000-step target, batch 128, learning rate
+  2e-4, EMA 0.999, and source commit
+  `38666c71b849ba3a70a1311304e79bc69bc1480c`.
+  These JSON files do not include the checkpoint's actual completed-step field,
+  nor independently verify an uninterrupted training trajectory.
+- All recorded evaluation settings match the original runs except checkpoint
+  hash and omission of the 10-step setting. Sampling seeds are matched.
+- [Raw seed 0](results/clipping_ablation/train_seed_2026/seed_0.json),
+  [seed 42](results/clipping_ablation/train_seed_2026/seed_42.json),
+  [seed 123](results/clipping_ablation/train_seed_2026/seed_123.json).
+- [Separate-checkpoint summary CSV](results/clipping_ablation/checkpoint_summary.csv)
+  and [tables](results/clipping_ablation/checkpoint_tables.md).
+
+These uploaded Colab results were archived unchanged; statistics and figures
+were rebuilt from them. No training or FID evaluation was rerun for this update.
+New-model preview images have not been supplied; the visual examples later
+in this README belong only to the original checkpoint.
+
+Rebuild this comparison without a GPU:
+
+```bash
+pip install matplotlib
+python scripts/compare_checkpoints.py
+```
+
+The script checks seed identities, run completeness, recorded configuration
+agreement, distinct checkpoint hashes, and relevant training settings.
+It regenerates per-model tables, CSV, and SVG/PNG comparison figures.
+
+## Original checkpoint: clipping ablation
+
+![Original checkpoint: FID and sampling time](assets/clipping_ablation.svg)
+
+
 
 Mean ± **sample standard deviation (ddof=1)** over three sampling seeds.
 Every cell has n=3; each run generates 10,000 images. Lower FID is better.
@@ -152,17 +210,17 @@ The old plot and plotting utility remain historical artifacts; use
 
 ## Limitations and next steps
 
-**Completed:** three clipping modes × four step counts × three sampling seeds,
-with raw scores, sampling-time measurements, and consistent mean/sample-SD plots.
+**Completed:** original checkpoint: 36 measurements; new training-seed-2026 checkpoint: 27 measurements. Raw scores, new training configuration, per-model statistics, and a matched comparison figure are archived.
 
 **Completed visual follow-up:** nine preview grids have been archived and combined
-above. The next research gate is independent training checkpoints, rather than
-additional copies of the same fixed-noise previews.
+above for the original checkpoint only. One additional training run has now
+been evaluated; further training replication remains useful.
 
 **Further experiments:**
 
-1. Train independently seeded checkpoints in separate directories and repeat
-   the key comparisons to assess training variability.
+1. Record the actual completed-step field and checkpoint-linked training metadata
+   for the new model. Add further independently seeded training runs in separate
+   directories before making broad claims about training variability.
 2. Add domain-relevant quality/diversity metrics and inspect final clipping
    magnitudes. Inception features and finite-sample FID have limitations.
 3. Densify step counts around the observed minimum using a validation split
@@ -171,8 +229,10 @@ additional copies of the same fixed-noise previews.
 4. Extend datasets, noise schedules, and eta; add mechanistic diagnostics before
    attributing the remaining increase to accumulated high-frequency errors.
 
-The three sampling seeds do not quantify training variability, metric bias,
-or uncertainty from resampling the real-image reference set.
+The three sampling seeds per checkpoint do not quantify training variability,
+metric bias, or uncertainty from resampling the real-image reference set.
+Two checkpoints provide limited replication, not a reliable estimate of the
+full distribution across training runs.
 
 ## References
 
