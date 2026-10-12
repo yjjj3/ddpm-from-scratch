@@ -5,6 +5,12 @@ and noise recomputation affect DDIM's sampling-step/quality relationship.
 
 ![Two-checkpoint comparison](assets/checkpoint_comparison.svg)
 
+## Research summary
+
+- [精簡研究摘要（繁體中文）](notes/research_summary.md): question, controlled comparison, concrete results, negative findings, and limits.
+- [Falsifiable claims and local DDIM algebra](notes/research_hypotheses.md): post-hoc findings separated from unexecuted future hypotheses.
+- [Archived evidence audit](results/clipping_ablation/evidence_audit.md): paired differences and exact raw-file hashes; rebuild with `python3 scripts/audit_research.py` (standard library only, no GPU).
+
 ## Notebook entry points
 
 - [Review notebook](ddpm_experiments_review.ipynb): organized sections; default

@@ -17,7 +17,9 @@ def ddim_sample(model, diffusion, shape, device, num_steps=50, eta=0.0):
         diffusion: Diffusion object from ddpm_mnist (provides alpha_bars, T)
         shape: output tensor shape, e.g. (B, 1, 32, 32)
         num_steps: number of sampling steps (uniform subsequence of [0, T-1])
-        eta: 0 = fully deterministic; 1 = stochasticity equivalent to DDPM
+        eta: 0 = deterministic given initial noise; 1 uses DDIM posterior-variance
+            stochasticity (not identical to this repo's beta-variance DDPM).
+            See notes/derivation.md, section 4.3.
     """
     ts = torch.linspace(diffusion.T - 1, 0, num_steps, dtype=torch.long)
 
