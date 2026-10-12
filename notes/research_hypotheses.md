@@ -52,7 +52,7 @@ $$
 
 對應 [review notebook](../ddpm_experiments_review.ipynb) 的 `run_ablation` → `sample`：先算 x0、視 mode clamp，僅 `clip_recompute` 以 `(x - sqrt(ab)*x0)/sqrt(1-ab)` 更新 eps，再合成下一步。[ddim.py](../ddim.py) 仍只有 original clipping。三種模式沿軌跡會遇到不同狀態、模型預測與 delta，故不能把上述固定狀態公式直接累加成 FID 因果證明。
 
-`python3 scripts/audit_research.py` 用標準函式庫檢查 60 個合成標量情境（含 active/inactive clipping、零跨度及終點）；數值容忍度 1e-12。它驗證公式，沒有執行 PyTorch sampler。小 $a$ 或 $1-a$ 的實際精度、裝置與 dtype 仍需獨立實作測試。
+`python3 scripts/audit_research.py` 用標準函式庫檢查 60 個合成標量情境（含 active/inactive clipping、零跨度及終點）；`math.isclose` 使用絕對容差 1e-12、相對容差 1e-9（Python 預設值）；程式中的邊界相等檢查另採精確相等。它驗證公式，沒有執行 PyTorch sampler。小 $a$ 或 $1-a$ 的實際精度、裝置與 dtype 仍需獨立實作測試。
 
 ## 3. 尚未執行、需先同意的判別性計畫
 
